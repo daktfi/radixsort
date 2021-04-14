@@ -32,9 +32,9 @@ int main()
 	std::chrono::duration<double> d1 = t1 - t0, d2 = t2 - t1;
 
 	std::cout << "Sorted " << TEST_SIZE << " uint64_t keys in " << d1.count() << "s ("
-	          << ( TEST_SIZE / d1.count() ) << " items/sec" << std::endl;
+	          << size_t( TEST_SIZE / d1.count() ) << " items/sec)" << std::endl;
 	std::cout << "Sorted " << TEST_SIZE << " uint32_t keys with uint128_t load in " << d2.count()
-	          << "s (" << ( TEST_SIZE / d2.count() ) << " items/sec" << std::endl;
+	          << "s (" << size_t( TEST_SIZE / d2.count() ) << " items/sec)" << std::endl;
 
 	return 0;
 }
