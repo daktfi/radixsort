@@ -229,14 +229,14 @@ std::string t_name<uint128_t>()
 }
 
 template <typename Key, unsigned width>
-double test_sort_key_inner( Key max_key, size_t length, std::vector<Key> &keys )
+double test_sort_key_inner( Key max_key, std::vector<Key> &keys )
 {
 	// Copy data and take time point.
 	std::vector<Key> duplicate = keys;
 	high_resolution_clock::time_point t0 = high_resolution_clock::now();
 
 	// Sort data.
-	Sorting<Key, std::vector, width>::sort_key( max_key, length, duplicate );
+	Sorting<Key, std::vector, width>::sort_key( max_key, duplicate );
 
 	// Take time point and calculate delta.
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -247,7 +247,7 @@ double test_sort_key_inner( Key max_key, size_t length, std::vector<Key> &keys )
 }
 
 template <typename Key, unsigned width>
-double test_sort_key_outer( Key max_key, size_t length, std::vector<Key> &keys, unsigned runs )
+double test_sort_key_outer( Key max_key, std::vector<Key> &keys, unsigned runs )
 {
 	double average = 0;
 
@@ -256,7 +256,7 @@ double test_sort_key_outer( Key max_key, size_t length, std::vector<Key> &keys, 
 		unsigned worst = -1;
 
 		for( unsigned run = 0; run < runs; ++run ) {
-			times[run] = test_sort_key_inner<Key, width>( max_key, length, keys );
+			times[run] = test_sort_key_inner<Key, width>( max_key, keys );
 			average += times[run];
 		}
 
@@ -277,15 +277,15 @@ double test_sort_key_outer( Key max_key, size_t length, std::vector<Key> &keys, 
 			average /= runs - 1;
 		}
 	} else
-		average = test_sort_key_inner<Key, width>( max_key, length, keys );
+		average = test_sort_key_inner<Key, width>( max_key, keys );
 
 	return average;
 }
 
-#define test_key( x )                                                             \
-	if( ( x <= key_width || first ) && x >= digit_start && x <= digit_end ) {     \
-		timing[x] = test_sort_key_outer<Key, x>( max_key, length, source, runs ); \
-		first = false;                                                            \
+#define test_key( x )                                                         \
+	if( ( x <= key_width || first ) && x >= digit_start && x <= digit_end ) { \
+		timing[x] = test_sort_key_outer<Key, x>( max_key, source, runs );     \
+		first = false;                                                        \
 	}
 
 template <typename Key>
@@ -328,20 +328,19 @@ void test_sort_key( size_t length, unsigned key_width, unsigned runs, unsigned d
 }
 
 template <typename Key, typename Data, unsigned width>
-double test_sort_both_inner( Key max_key, size_t length, std::vector<Key> &keys,
-                             std::vector<Data> &values )
+double test_sort_both_inner( Key max_key, std::vector<Key> &keys, std::vector<Data> &values )
 {
 	std::vector<Key> duplicate = keys;
 	high_resolution_clock::time_point t0 = high_resolution_clock::now();
-	Sorting<Key, std::vector, width>::sort_both( max_key, length, duplicate, values );
+	Sorting<Key, std::vector, width>::sort_both( max_key, duplicate, values );
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	duration<double> delta = t1 - t0;
 	return delta.count();
 }
 
 template <typename Key, typename Data, unsigned width>
-double test_sort_both_outer( Key max_key, size_t length, std::vector<Key> &keys,
-                             std::vector<Data> &values, unsigned runs )
+double test_sort_both_outer( Key max_key, std::vector<Key> &keys, std::vector<Data> &values,
+                             unsigned runs )
 {
 	double average = 0;
 
@@ -350,7 +349,7 @@ double test_sort_both_outer( Key max_key, size_t length, std::vector<Key> &keys,
 		unsigned worst = -1;
 
 		for( unsigned run = 0; run < runs; ++run ) {
-			times[run] = test_sort_both_inner<Key, Data, width>( max_key, length, keys, values );
+			times[run] = test_sort_both_inner<Key, Data, width>( max_key, keys, values );
 			average += times[run];
 		}
 
@@ -371,15 +370,15 @@ double test_sort_both_outer( Key max_key, size_t length, std::vector<Key> &keys,
 			average /= runs - 1;
 		}
 	} else
-		average = test_sort_both_inner<Key, Data, width>( max_key, length, keys, values );
+		average = test_sort_both_inner<Key, Data, width>( max_key, keys, values );
 
 	return average;
 }
 
-#define test_both( x )                                                                           \
-	if( ( x <= key_width || first ) && x >= digit_start && x <= digit_end ) {                    \
-		timing[x] = test_sort_both_outer<Key, Data, x>( max_key, length, source, values, runs ); \
-		first = false;                                                                           \
+#define test_both( x )                                                                   \
+	if( ( x <= key_width || first ) && x >= digit_start && x <= digit_end ) {            \
+		timing[x] = test_sort_both_outer<Key, Data, x>( max_key, source, values, runs ); \
+		first = false;                                                                   \
 	}
 
 template <typename Key, typename Data, unsigned width = 0>
