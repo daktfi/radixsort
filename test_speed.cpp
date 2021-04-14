@@ -1,23 +1,253 @@
-#include <vector>
 #include <chrono>
+#include <cmath>
+#include <cstdlib>
+#include <string>
+#include <vector>
 
 #include "radixsort_works.hpp"
 
-typedef unsigned __int128 uint128_t;
+using int128_t = __int128;
+using uint128_t = unsigned __int128;
+using namespace std::chrono;
+
+/*** unsigned typed rng up to 128 bit ***/
+template <typename Key>
+Key random( unsigned width );
+
+template <>
+uint8_t random( unsigned width )
+{
+	if( width == 0 || width > 8 )
+		width = 8;
+
+	return rand() & ( ( 1 << width ) - 1 );
+}
+
+template <>
+uint16_t random( unsigned width )
+{
+	if( width == 0 || width > 16 )
+		width = 16;
+
+	return rand() & ( ( 1ul << width ) - 1ul );
+}
+
+template <>
+uint32_t random( unsigned width )
+{
+	if( width == 0 || width > 32 )
+		width = 32;
+
+	if( width <= 31 )
+		return rand() & ( ( 1ul << width ) - 1ul );
+	else
+		return rand() ^ ( rand() << 1 );
+}
+
+template <>
+uint64_t random( unsigned width )
+{
+	if( width == 0 || width > 64 )
+		width = 64;
+
+	if( width > 0 && width <= 31 )
+		return static_cast<uint64_t>( rand() & ( ( 1ul << width ) - 1ul ) );
+	else if( width > 0 && width <= 62 )
+		return static_cast<uint64_t>( rand() )
+		       ^ ( static_cast<uint64_t>( rand() & ( ( 1ul << ( width - 31 ) ) - 1ul ) ) << 31 );
+	else
+		return static_cast<uint64_t>( rand() ) ^ ( static_cast<uint64_t>( rand() ) << 31 )
+		       ^ ( static_cast<uint64_t>( rand() & ( ( 1ul << ( width - 62 ) ) - 1ul ) ) << 62 );
+}
+
+template <>
+uint128_t random( unsigned width )
+{
+	if( width == 0 || width > 128 )
+		width = 128;
+
+	if( width <= 31 )
+		return static_cast<uint128_t>( rand() & ( ( 1ul << width ) - 1ul ) );
+	else if( width <= 62 )
+		return static_cast<uint128_t>( rand() )
+		       ^ ( static_cast<uint128_t>( rand() & ( ( 1ul << ( width - 31 ) ) - 1ul ) ) << 31 );
+	else if( width <= 93 )
+		return static_cast<uint128_t>( rand() ) ^ ( static_cast<uint128_t>( rand() ) << 31 )
+		       ^ ( static_cast<uint128_t>( rand() & ( ( 1ul << ( width - 62 ) ) - 1ul ) ) << 62 );
+	else if( width <= 124 )
+		return static_cast<uint128_t>( rand() ) ^ ( static_cast<uint128_t>( rand() ) << 31 )
+		       ^ ( static_cast<uint128_t>( rand() ) << 62 )
+		       ^ ( static_cast<uint128_t>( rand() & ( ( 1ul << ( width - 93 ) ) - 1ul ) ) << 93 );
+	else
+		return static_cast<uint128_t>( rand() ) ^ ( static_cast<uint128_t>( rand() ) << 31 )
+		       ^ ( static_cast<uint128_t>( rand() ) << 62 )
+		       ^ ( static_cast<uint128_t>( rand() ) << 93 )
+		       ^ ( static_cast<uint128_t>( rand() & ( ( 1ul << ( width - 124 ) ) - 1ul ) ) << 124 );
+}
+
+/*** signed casted rng ***/
+template <>
+int8_t random( unsigned width )
+{
+	uint8_t value;
+
+	if( width > 0 && width < 8 ) {
+		value = random<uint8_t>( width + 1 );
+
+		if( value & ( 1 << width ) )
+			value = -value;
+	} else
+		value = random<uint8_t>( 8 );
+
+	return static_cast<int8_t>( value );
+}
+template <>
+int16_t random( unsigned width )
+{
+	uint16_t value;
+
+	if( width > 0 && width < 16 ) {
+		value = random<uint16_t>( width + 1 );
+
+		if( value & ( 1 << width ) )
+			value = -value;
+	} else
+		value = random<uint16_t>( 16 );
+
+	return static_cast<int16_t>( value );
+}
+template <>
+int32_t random( unsigned width )
+{
+	uint32_t value;
+
+	if( width > 0 && width < 32 ) {
+		value = random<uint32_t>( width + 1 );
+
+		if( value & ( static_cast<uint32_t>( 1 ) << width ) )
+			value = -value;
+	} else
+		value = random<uint32_t>( 32 );
+
+	return static_cast<int32_t>( value );
+}
+template <>
+int64_t random( unsigned width )
+{
+	uint64_t value;
+
+	if( width > 0 && width < 64 ) {
+		value = random<uint64_t>( width + 1 );
+
+		if( value & ( static_cast<uint64_t>( 1 ) << width ) )
+			value = -value;
+	} else
+		value = random<uint64_t>( 64 );
+
+	return static_cast<int64_t>( value );
+}
+template <>
+int128_t random( unsigned width )
+{
+	uint128_t value;
+
+	if( width > 0 && width < 128 ) {
+		value = random<uint128_t>( width + 1 );
+
+		if( value & ( static_cast<uint128_t>( 1 ) << width ) )
+			value = -value;
+	} else
+		value = random<uint128_t>( 128 );
+
+	return static_cast<int128_t>( value );
+}
+
+template <>
+double random( unsigned )
+{
+	uint64_t tmp = random<uint64_t>( 64 );
+	double val = *reinterpret_cast<double *>( &tmp );
+
+	return std::isnan( val ) ? 0.0 : val;
+}
+
+/*** type names ***/
+template <typename Type>
+std::string t_name()
+{
+	return std::to_string( sizeof( Type ) ) + "b";
+}
+template <>
+std::string t_name<int8_t>()
+{
+	return "int8";
+}
+template <>
+std::string t_name<uint8_t>()
+{
+	return "uint8";
+}
+template <>
+std::string t_name<int16_t>()
+{
+	return "int16";
+}
+template <>
+std::string t_name<uint16_t>()
+{
+	return "uint16";
+}
+template <>
+std::string t_name<int32_t>()
+{
+	return "int32";
+}
+template <>
+std::string t_name<uint32_t>()
+{
+	return "uint32";
+}
+template <>
+std::string t_name<int64_t>()
+{
+	return "int64";
+}
+template <>
+std::string t_name<uint64_t>()
+{
+	return "uint64";
+}
+template <>
+std::string t_name<int128_t>()
+{
+	return "int128";
+}
+template <>
+std::string t_name<uint128_t>()
+{
+	return "uint128";
+}
 
 template <typename Key, unsigned width>
-double test_sort_key_inner( Key max_key, UIndex length, std::vector<Key> &keys )
+double test_sort_key_inner( Key max_key, size_t length, std::vector<Key> &keys )
 {
+	// Copy data and take time point.
 	std::vector<Key> duplicate = keys;
 	high_resolution_clock::time_point t0 = high_resolution_clock::now();
-	Sorting<Key, width>::sort_key( max_key, length, duplicate );
+
+	// Sort data.
+	Sorting<Key, std::vector, width>::sort_key( max_key, length, duplicate );
+
+	// Take time point and calculate delta.
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	duration<double> delta = t1 - t0;
+
+	// Return time delta.
 	return delta.count();
 }
 
 template <typename Key, unsigned width>
-double test_sort_key_outer( Key max_key, UIndex length, std::vector<Key> &keys, unsigned runs )
+double test_sort_key_outer( Key max_key, size_t length, std::vector<Key> &keys, unsigned runs )
 {
 	double average = 0;
 
@@ -54,12 +284,12 @@ double test_sort_key_outer( Key max_key, UIndex length, std::vector<Key> &keys, 
 
 #define test_key( x )                                                             \
 	if( ( x <= key_width || first ) && x >= digit_start && x <= digit_end ) {     \
-	    timing[x] = test_sort_key_outer<Key, x>( max_key, length, source, runs ); \
-	    first = false;                                                            \
-    }
+		timing[x] = test_sort_key_outer<Key, x>( max_key, length, source, runs ); \
+		first = false;                                                            \
+	}
 
 template <typename Key>
-void test_sort_key( UIndex length, unsigned key_width, unsigned runs, unsigned digit_start,
+void test_sort_key( size_t length, unsigned key_width, unsigned runs, unsigned digit_start,
                     unsigned digit_end )
 {
 	std::vector<Key> source( length );
@@ -67,7 +297,7 @@ void test_sort_key( UIndex length, unsigned key_width, unsigned runs, unsigned d
 	double timing[19] = { 0.0 };
 	bool first = true;
 
-	for( UIndex row = 0; row < length; ++row ) {
+	for( size_t row = 0; row < length; ++row ) {
 		source[row] = random<Key>( key_width );
 		max_key = source[row] > max_key ? source[row] : max_key;
 	}
@@ -98,19 +328,20 @@ void test_sort_key( UIndex length, unsigned key_width, unsigned runs, unsigned d
 }
 
 template <typename Key, typename Data, unsigned width>
-double test_sort_both_inner( Key max_key, UIndex length, std::vector<Key> &keys, std::vector<Data> &values )
+double test_sort_both_inner( Key max_key, size_t length, std::vector<Key> &keys,
+                             std::vector<Data> &values )
 {
 	std::vector<Key> duplicate = keys;
 	high_resolution_clock::time_point t0 = high_resolution_clock::now();
-	Sorting<Key, width>::sort_both( max_key, length, duplicate, values );
+	Sorting<Key, std::vector, width>::sort_both( max_key, length, duplicate, values );
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	duration<double> delta = t1 - t0;
 	return delta.count();
 }
 
 template <typename Key, typename Data, unsigned width>
-double test_sort_both_outer( Key max_key, UIndex length, std::vector<Key> &keys, std::vector<Data> &values,
-                             unsigned runs )
+double test_sort_both_outer( Key max_key, size_t length, std::vector<Key> &keys,
+                             std::vector<Data> &values, unsigned runs )
 {
 	double average = 0;
 
@@ -147,12 +378,12 @@ double test_sort_both_outer( Key max_key, UIndex length, std::vector<Key> &keys,
 
 #define test_both( x )                                                                           \
 	if( ( x <= key_width || first ) && x >= digit_start && x <= digit_end ) {                    \
-	    timing[x] = test_sort_both_outer<Key, Data, x>( max_key, length, source, values, runs ); \
-	    first = false;                                                                           \
-    }
+		timing[x] = test_sort_both_outer<Key, Data, x>( max_key, length, source, values, runs ); \
+		first = false;                                                                           \
+	}
 
 template <typename Key, typename Data, unsigned width = 0>
-void test_sort_both( UIndex length, unsigned key_width, unsigned runs, unsigned digit_start,
+void test_sort_both( size_t length, unsigned key_width, unsigned runs, unsigned digit_start,
                      unsigned digit_end )
 {
 	std::vector<Key> source( length );
@@ -161,7 +392,7 @@ void test_sort_both( UIndex length, unsigned key_width, unsigned runs, unsigned 
 	double timing[19] = { 0.0 };
 	bool first = true;
 
-	for( UIndex row = 0; row < length; ++row ) {
+	for( size_t row = 0; row < length; ++row ) {
 		source[row] = random<Key>( key_width );
 		max_key = source[row] > max_key ? source[row] : max_key;
 	}
@@ -191,10 +422,10 @@ void test_sort_both( UIndex length, unsigned key_width, unsigned runs, unsigned 
 	printf( "\n" );
 }
 
-main()
+int main( int argc, char *argv[] )
 {
 	// TODO: Length, number of passes, starting/ending key and digigt widths must be settable...
-	UIndex length = 10000000;
+	size_t length = 10000000;
 	unsigned runs = 4, key_start = 1, key_end = 128, digit_start = 4, digit_end = 18;
 
 	if( key_start > 128 )
@@ -211,7 +442,7 @@ main()
 	if( runs == 0 )
 		runs = 4;
 
-	if( runs > 100 )	// Some common sense limits...
+	if( runs > 100 )  // Some common sense limits...
 		runs = 100;
 
 	if( digit_start < 4 )

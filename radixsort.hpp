@@ -7,11 +7,12 @@
 /*
  * Top-level functions to use radixsort.
  * Functions works STRICTLY in a structure-of-arrays manner.
+ * Probably no support for signed integers, but I may fix that later.
  * No support for float, only double.
  * If you need float it's quite easy to do looking at code.
  * Argument containers will be replaced with another containers of same type with sorted data.
  * So, use only "whole" containers like std::vector.
- * No, it doesn't works on lists. Don't use lists over thousand items or sort 'em via std::sort().
+ * No, it doesn't works on lists. Sort 'em via std::sort().
  */
 
 /// Sorts array of keys.
@@ -23,7 +24,7 @@ void radixsort( Container<Key> &keys )
 {
 	static_assert( std::is_integral<Key>::value || std::is_same<Key, double>::value,
 	               "Radix sort works only for doubles and integral types" );
-	return radixsort_key( keys );
+	Sorting<Key, Container>::sort_key( keys );
 }
 
 /// Sorts arrays of keys and tied values of FIXED SIZE types.
@@ -37,5 +38,5 @@ void radixsort( Container<Key> &keys, Container<Data> &load )
 {
 	static_assert( std::is_integral<Key>::value || std::is_same<Key, double>::value,
 	               "Radix sort works only for doubles and integral types" );
-	return radixsort_both( keys, load );
+	Sorting<Key, Container>::sort_both( keys, load );
 }
