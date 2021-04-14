@@ -264,7 +264,7 @@ public:
 	template <typename Data>
 	static void sort_both( Key max_key, Container<Key> &keys, Container<Data> &vals )
 	{
-		if( keys.size == 0 )
+		if( keys.size() == 0 )
 			return;
 
 		unsigned key_width = max_key == 0 ? ( 8 * sizeof( Key ) ) : significant_bits( max_key );
