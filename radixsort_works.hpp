@@ -209,7 +209,7 @@ public:
 		if( keys.size() == 0 )
 			return;
 
-		unsigned key_width = max_key == 0 ? ( 8 * sizeof( Key ) ) : significant_bits( max_key );
+		unsigned key_width = ( max_key == 0 ) ? ( 8 * sizeof( Key ) ) : significant_bits( max_key );
 		unsigned digit_width, passes_count;
 
 		if( width == 0 ) {
@@ -268,7 +268,7 @@ public:
 		if( keys.size() == 0 )
 			return;
 
-		unsigned key_width = max_key == 0 ? ( 8 * sizeof( Key ) ) : significant_bits( max_key );
+		unsigned key_width = ( max_key == 0 ) ? ( 8 * sizeof( Key ) ) : significant_bits( max_key );
 		unsigned digit_width, passes_count;
 
 		if( width == 0 ) {
@@ -325,7 +325,7 @@ public:
 		if( keys.size() == 0 )
 			return;
 
-		unsigned key_width = max_key == 0 ? ( 8 * sizeof( Key ) ) : significant_bits( max_key );
+		unsigned key_width = ( max_key == 0 ) ? ( 8 * sizeof( Key ) ) : significant_bits( max_key );
 		unsigned digit_width, passes_count;
 
 		if( width == 0 ) {
@@ -558,10 +558,10 @@ private:
 
 		size_t length = keys.size();
 		Container<Key> spare( length );
-		size_t stat[stat_length * passes_count];
-		size_t *offsets = stat;
+		Container<size_t> stat( stat_length * passes_count );
+		size_t *offsets = &stat[0];
 
-		memset( stat, 0, stat_length * passes_count * sizeof( size_t ) );
+		// memset( stat, 0, stat_length * passes_count * sizeof( size_t ) );
 
 		// Count statistics. Unless it's 8-bit key it fractional, so no reason to overoptimize.
 		for( size_t row = 0; row < length; ++row )
@@ -604,10 +604,10 @@ private:
 		size_t length = keys.size();
 		Container<Key> spare_keys( length );
 		Container<Data> spare_vals( length );
-		size_t stat[stat_length * passes_count];
-		size_t *offsets = stat;
+		Container<size_t> stat( stat_length * passes_count );
+		size_t *offsets = &stat[0];
 
-		memset( stat, 0, stat_length * passes_count * sizeof( size_t ) );
+		// memset( stat, 0, stat_length * passes_count * sizeof( size_t ) );
 
 		// Count statistics. Unless it's 8-bit key it fractional, so no reason to overoptimize.
 		for( size_t row = 0; row < length; ++row )
@@ -638,12 +638,12 @@ private:
 
 		// Get statistics size and resize buffer accordingly.
 		size_t length = keys.size();
-		size_t stat[stat_length * passes_count];
+		Container<size_t> stat( stat_length * passes_count );
 		size_t *stat_ptr[passes_count];
 		bool skip_passes[passes_count];
 		unsigned real_passes = 0, pass_number[passes_count];
 
-		memset( stat, 0, stat_length * passes_count * sizeof( size_t ) );
+		// memset( stat, 0, stat_length * passes_count * sizeof( size_t ) );
 
 		// Count statistics. Unless it's 8-bit key it fractional, so no reason to overoptimize.
 		for( size_t row = 0; row < length; ++row )

@@ -293,7 +293,7 @@ void test_sort_key( size_t length, unsigned key_width, unsigned runs, unsigned d
                     unsigned digit_end )
 {
 	std::vector<Key> source( length );
-	Key max_key;
+	Key max_key = 0;
 	double timing[19] = { 0.0 };
 	bool first = true;
 
@@ -387,7 +387,7 @@ void test_sort_both( size_t length, unsigned key_width, unsigned runs, unsigned 
 {
 	std::vector<Key> source( length );
 	std::vector<Data> values( length );
-	Key max_key;
+	Key max_key = 0;
 	double timing[19] = { 0.0 };
 	bool first = true;
 
@@ -424,7 +424,7 @@ void test_sort_both( size_t length, unsigned key_width, unsigned runs, unsigned 
 int main( int argc, char *argv[] )
 {
 	// TODO: Length, number of passes, starting/ending key and digigt widths must be settable...
-	size_t length = 10000000;
+	size_t length = 1000000;    // 1m is usually enough to get GOOD speed estimate.
 	unsigned runs = 4, key_start = 1, key_end = 128, digit_start = 4, digit_end = 18;
 
 	if( key_start > 128 )
